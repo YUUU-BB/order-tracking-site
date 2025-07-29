@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>진행상황 조회</title>
+  <title>주문 진행 현황 조회</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f8f8f8; margin: 0; padding: 20px; }
     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -15,14 +15,15 @@
       border-radius: 5px; font-size: 14px;
     }
     .status-button:hover { background: #eee; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    .result-info { margin-top: 10px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
     th { background-color: #f0f0f0; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>사업자 진행상황 조회</h1>
+    <h1>주문 진행 현황 조회</h1>
     <div class="search-box">
       <select id="searchType">
         <option value="bizNumber">사업자등록번호</option>
@@ -34,11 +35,12 @@
     </div>
 
     <div id="statusSummary" class="status-buttons"></div>
+    <div class="result-info" id="resultInfo"></div>
 
     <table id="resultTable">
       <thead>
         <tr>
-          <th>등록일</th><th>사업자명</th><th>사업자등록번호</th><th>단계</th><th>상세내용</th>
+          <th>결제일</th><th>순번</th><th>제품명</th><th>건수</th><th>주문금액</th><th>진행상황</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -49,77 +51,74 @@
     const sampleData = [
       {
         bizNumber: '123-45-67890',
-        bizName: '에이치앤제이컴퍼니',
+        bizName: '솔티',
         step: '개발결제',
-        detail: '계약금 결제 완료',
-        date: '2025-07-20'
-      },
-      {
-        bizNumber: '123-45-67890',
-        bizName: '에이치앤제이컴퍼니',
-        step: '개발확정',
-        detail: '샘플 승인 및 확정',
-        date: '2025-07-25'
-      },
-      {
-        bizNumber: '999-88-77777',
-        bizName: '주식회사 모노랩스',
-        step: '생산진행',
-        detail: '1차 생산 시작',
-        date: '2025-07-28'
+        detail: '샘플비 결제 완료',
+        date: '2025-07-25',
+        orderNo: '20250725001',
+        product: '클렌징폼 100ml',
+        count: 1,
+        amount: '500,000원'
       }
     ];
+
+    let currentFiltered = [];
 
     function searchOrders() {
       const type = document.getElementById('searchType').value;
       const keyword = document.getElementById('searchKeyword').value;
       const fromDate = document.getElementById('fromDate').value;
       const toDate = document.getElementById('toDate').value;
-      const resultBody = document.querySelector('#resultTable tbody');
-      resultBody.innerHTML = '';
 
-      const filtered = sampleData.filter(item => {
+      currentFiltered = sampleData.filter(item => {
         const match = item[type].includes(keyword);
         const inRange = (!fromDate || item.date >= fromDate) && (!toDate || item.date <= toDate);
         return match && inRange;
       });
 
-      const stepCount = {};
-      filtered.forEach(item => {
-        stepCount[item.step] = (stepCount[item.step] || 0) + 1;
-      });
+      renderSummary(currentFiltered);
+      renderTable([]);
+      document.getElementById('resultInfo').textContent = '';
+    }
 
+    function renderSummary(data) {
       const summaryDiv = document.getElementById('statusSummary');
       summaryDiv.innerHTML = '';
       const allSteps = ['개발결제','원료수급','개발진행','개발확정','생산결제','품목제조보고서','표시사항','전달디자인검수','필름인쇄','생산진행'];
+      const stepCount = {};
+      data.forEach(item => {
+        stepCount[item.step] = (stepCount[item.step] || 0) + 1;
+      });
       allSteps.forEach(step => {
         const count = stepCount[step] || 0;
         const btn = document.createElement('div');
         btn.className = 'status-button';
         btn.textContent = `${step} (${count})`;
-        btn.onclick = () => renderTable(filtered.filter(i => i.step === step));
+        btn.onclick = () => {
+          const result = data.filter(i => i.step === step);
+          document.getElementById('resultInfo').textContent = `조회결과: ${result.length} 건`;
+          renderTable(result);
+        };
         summaryDiv.appendChild(btn);
       });
-
-      if (filtered.length === 0) {
-        const row = document.createElement('tr');
-        const cell = document.createElement('td');
-        cell.colSpan = 5;
-        cell.textContent = '조회된 데이터가 없습니다.';
-        row.appendChild(cell);
-        resultBody.appendChild(row);
-      } else {
-        renderTable(filtered);
-      }
     }
 
     function renderTable(data) {
-      const resultBody = document.querySelector('#resultTable tbody');
-      resultBody.innerHTML = '';
-      data.forEach(item => {
+      const tbody = document.querySelector('#resultTable tbody');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
         const row = document.createElement('tr');
-        row.innerHTML = `<td>${item.date}</td><td>${item.bizName}</td><td>${item.bizNumber}</td><td>${item.step}</td><td>${item.detail}</td>`;
-        resultBody.appendChild(row);
+        const cell = document.createElement('td');
+        cell.colSpan = 6;
+        cell.textContent = '조회된 데이터가 없습니다.';
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+      }
+      data.slice(0, 10).forEach((item, idx) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${item.date}</td><td>${idx+1}</td><td>${item.product}</td><td>${item.count}</td><td>${item.amount}</td><td>${item.detail}</td>`;
+        tbody.appendChild(row);
       });
     }
   </script>
