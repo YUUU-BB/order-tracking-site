@@ -30,6 +30,7 @@
         <option value="bizName">사업자명</option>
       </select>
       <input type="text" id="searchKeyword" placeholder="검색어 입력">
+      <input type="text" id="secretCode" placeholder="고유번호 입력 (예: A1!b2)">
       <input type="date" id="fromDate"> ~ <input type="date" id="toDate">
       <button onclick="searchOrders()">조회</button>
     </div>
@@ -51,11 +52,11 @@
     const sampleData = [
       {
         bizNumber: '123-45-67890',
-        bizName: '솔티',
+        bizName: '주식회사 옵티미',
+        code: 'A1!b2',
         step: '개발결제',
         detail: '샘플비 결제 완료',
         date: '2025-07-25',
-        orderNo: '20250725001',
         product: '클렌징폼 100ml',
         count: 1,
         amount: '500,000원'
@@ -66,15 +67,28 @@
 
     function searchOrders() {
       const type = document.getElementById('searchType').value;
-      const keyword = document.getElementById('searchKeyword').value;
+      const keyword = document.getElementById('searchKeyword').value.trim();
+      const code = document.getElementById('secretCode').value.trim();
       const fromDate = document.getElementById('fromDate').value;
       const toDate = document.getElementById('toDate').value;
 
+      if (!keyword || !code) {
+        alert("사업자명 또는 고유번호를 모두 입력해야 합니다.");
+        return;
+      }
+
       currentFiltered = sampleData.filter(item => {
-        const match = item[type].includes(keyword);
+        const match = item[type] === keyword && item.code === code;
         const inRange = (!fromDate || item.date >= fromDate) && (!toDate || item.date <= toDate);
         return match && inRange;
       });
+
+      if (currentFiltered.length === 0) {
+        document.getElementById('statusSummary').innerHTML = '';
+        renderTable([]);
+        document.getElementById('resultInfo').textContent = '';
+        return;
+      }
 
       renderSummary(currentFiltered);
       renderTable([]);
