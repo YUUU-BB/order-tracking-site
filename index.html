@@ -8,7 +8,7 @@
     .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h1 { font-size: 22px; margin-bottom: 16px; }
     .search-box { margin-bottom: 20px; }
-    label, select, input[type="text"], input[type="date"] { margin-right: 10px; padding: 8px; font-size: 14px; }
+    label, select, input[type="text"], input[type="date"], input[type="password"] { margin-right: 10px; padding: 8px; font-size: 14px; }
     .status-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
     .status-button {
       background: #f9f9f9; border: 1px solid #ccc; padding: 10px 16px; cursor: pointer;
@@ -30,7 +30,7 @@
         <option value="bizName">사업자명</option>
       </select>
       <input type="text" id="searchKeyword" placeholder="검색어 입력">
-      <input type="text" id="secretCode" placeholder="고유번호 입력 (예: A1!b2)">
+      <input type="password" id="bizPassword" placeholder="비밀번호 입력">
       <input type="date" id="fromDate"> ~ <input type="date" id="toDate">
       <button onclick="searchOrders()">조회</button>
     </div>
@@ -53,7 +53,7 @@
       {
         bizNumber: '123-45-67890',
         bizName: '주식회사 옵티미',
-        code: 'A1!b2',
+        password: 'op@123',
         step: '개발결제',
         detail: '샘플비 결제 완료',
         date: '2025-07-25',
@@ -68,17 +68,17 @@
     function searchOrders() {
       const type = document.getElementById('searchType').value;
       const keyword = document.getElementById('searchKeyword').value.trim();
-      const code = document.getElementById('secretCode').value.trim();
+      const password = document.getElementById('bizPassword').value.trim();
       const fromDate = document.getElementById('fromDate').value;
       const toDate = document.getElementById('toDate').value;
 
-      if (!keyword || !code) {
-        alert("사업자명 또는 고유번호를 모두 입력해야 합니다.");
+      if (!keyword || !password) {
+        alert("사업자명(또는 등록번호)와 비밀번호를 모두 입력해야 조회가 가능합니다.");
         return;
       }
 
       currentFiltered = sampleData.filter(item => {
-        const match = item[type] === keyword && item.code === code;
+        const match = item[type] === keyword && item.password === password;
         const inRange = (!fromDate || item.date >= fromDate) && (!toDate || item.date <= toDate);
         return match && inRange;
       });
